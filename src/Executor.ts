@@ -1,5 +1,5 @@
-import { EventEmitter } from 'node:events';
 import type { API, APIInteraction, Snowflake } from '@discordjs/core';
+import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter';
 import { ActionKind, Actions, type FollowUpData, type RespondData } from './actions/Actions.js';
 import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
 
@@ -67,8 +67,15 @@ export type InteractionHandler = (
 	interaction: APIInteraction,
 ) => AsyncGenerator<HandlerStep, HandlerStep, FollowUpMessageContainer>;
 
-// TODO
-export class Executor extends EventEmitter {
+export enum ExecutorEvents {
+	CallbackError = 'callbackError',
+}
+
+export interface ExecutorEventsMap {
+	[ExecutorEvents.CallbackError]: [error: Error];
+}
+
+export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 	readonly #api: API;
 
 	readonly #applicationId: Snowflake;
@@ -143,8 +150,7 @@ export class Executor extends EventEmitter {
 				try {
 					await op.callback();
 				} catch (error) {
-					// TODO
-					this.emit('callbackError', error);
+					this.emitCallbackError(error);
 				}
 
 				break;
@@ -152,5 +158,13 @@ export class Executor extends EventEmitter {
 		}
 
 		return nextValue;
+	}
+
+	private emitCallbackError(error: any) {
+		if (this.listenerCount(ExecutorEvents.CallbackError) === 0) {
+			throw error;
+		}
+
+		this.emit(ExecutorEvents.CallbackError, 123);
 	}
 }
