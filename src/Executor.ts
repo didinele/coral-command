@@ -71,8 +71,8 @@ export enum ExecutorEvents {
 }
 
 export interface ExecutorEventsMap {
-	[ExecutorEvents.CallbackError]: [error: Error];
-	[ExecutorEvents.HandlerError]: [error: Error];
+	[ExecutorEvents.CallbackError]: [error: Error, interaction: APIInteraction];
+	[ExecutorEvents.HandlerError]: [error: Error, interaction: APIInteraction];
 }
 
 export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
@@ -96,18 +96,22 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			try {
 				const { value: op, done } = nextValue ? await generator.next(nextValue) : await generator.next();
 				// This should only throw if the user used a wrong op, which we want to report as usual
-				nextValue = await this.handleOp(actions, op);
+				nextValue = await this.handleOp(actions, op, interaction);
 
 				if (done) {
 					break;
 				}
 			} catch (error) {
-				await this.emitHandlerError(this.toError(error), actions);
+				await this.emitHandlerError(this.toError(error), interaction, actions);
 			}
 		}
 	}
 
-	private async handleOp(actions: Actions, op: HandlerStep): Promise<FollowUpMessageContainer> {
+	private async handleOp(
+		actions: Actions,
+		op: HandlerStep,
+		interaction: APIInteraction,
+	): Promise<FollowUpMessageContainer> {
 		let nextValue = new FollowUpMessageContainer(null);
 
 		switch (op.action) {
@@ -149,7 +153,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				try {
 					await op.callback();
 				} catch (error) {
-					this.emitCallbackError(this.toError(error));
+					this.emitCallbackError(this.toError(error), interaction);
 				}
 
 				break;
@@ -174,16 +178,16 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			: new Error('An unknown error occurred (that could not be stringified).');
 	}
 
-	private emitCallbackError(error: Error) {
+	private emitCallbackError(error: Error, interaction: APIInteraction) {
 		if (this.listenerCount(ExecutorEvents.CallbackError) === 0) {
 			throw error;
 		}
 
-		this.emit(ExecutorEvents.CallbackError, error);
+		this.emit(ExecutorEvents.CallbackError, error, interaction);
 	}
 
-	private async emitHandlerError(error: Error, actions: Actions) {
-		this.emit(ExecutorEvents.HandlerError, error);
+	private async emitHandlerError(error: Error, interaction: APIInteraction, actions: Actions) {
+		this.emit(ExecutorEvents.HandlerError, error, interaction);
 
 		if (this.listenerCount(ExecutorEvents.HandlerError) !== 0) {
 			console.error(`Executor: An error occurred while processing the command: ${error.message}`, error);
@@ -206,7 +210,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			for (const attempt of attempts) {
 				try {
 					// Keep trying until something works
-					await this.handleOp(actions, attempt);
+					await this.handleOp(actions, attempt, interaction);
 					break;
 				} catch {}
 			}
