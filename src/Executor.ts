@@ -1,4 +1,4 @@
-import type { API, APIInteraction, Snowflake } from '@discordjs/core';
+import { TeamMemberMembershipState, type API, type APIInteraction, type Snowflake } from '@discordjs/core';
 import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter';
 import { ActionKind, Actions, type FollowUpData, type RespondData } from './actions/Actions.js';
 import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
@@ -72,7 +72,7 @@ export enum ExecutorEvents {
 
 export interface ExecutorEventsMap {
 	[ExecutorEvents.CallbackError]: [error: Error, interaction: APIInteraction];
-	[ExecutorEvents.HandlerError]: [error: Error, interaction: APIInteraction];
+	[ExecutorEvents.HandlerError]: [error: Error, actions: Actions];
 }
 
 export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
@@ -187,7 +187,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 	}
 
 	private async emitHandlerError(error: Error, interaction: APIInteraction, actions: Actions) {
-		this.emit(ExecutorEvents.HandlerError, error, interaction);
+		this.emit(ExecutorEvents.HandlerError, error, actions);
 
 		if (this.listenerCount(ExecutorEvents.HandlerError) !== 0) {
 			console.error(`Executor: An error occurred while processing the command: ${error.message}`, error);
@@ -196,22 +196,14 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				content: 'An error occurred while processing the command.',
 			};
 
-			const attempts: HandlerStep[] = [
-				{
-					action: ActionKind.Respond,
-					data,
-				},
-				{
-					action: ActionKind.FollowUp,
-					data,
-				},
-			];
-
-			for (const attempt of attempts) {
+			// Try both and hopefully something works
+			try {
+				await actions.respond(data);
+				return;
+			} catch {
 				try {
-					// Keep trying until something works
-					await this.handleOp(actions, attempt, interaction);
-					break;
+					await actions.followUp(data);
+					return;
 				} catch {}
 			}
 

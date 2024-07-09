@@ -72,8 +72,10 @@ executor
 	.on(ExecutorEvents.CallbackError, (error) => {
 		console.error('An unhandled error occurred while executing a non-report:', error);
 	})
-	.on(ExecutorEvents.InteractionError, (error) => {
+	.on(ExecutorEvents.InteractionError, (error, actions) => {
 		console.error('An unhandled occurred while executing an interaction:', error);
+		// note that now we don't give anything else to the user. you can use the `actions` object for that.
+		// (which also has a .interaction prop)
 	});
 
 const someHelper: InteractionHandler = async function* pingHandler(interaction): Promise<Snowflake> {
