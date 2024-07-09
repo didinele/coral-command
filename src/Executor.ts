@@ -63,9 +63,7 @@ export type HandlerStep =
 	| RespondStep
 	| UpdateFollowUpStep;
 
-export type InteractionHandler = (
-	interaction: APIInteraction,
-) => AsyncGenerator<HandlerStep, HandlerStep, FollowUpMessageContainer>;
+export type InteractionHandler = AsyncGenerator<HandlerStep, HandlerStep, FollowUpMessageContainer>;
 
 export enum ExecutorEvents {
 	CallbackError = 'callbackError',
@@ -89,8 +87,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		this.#applicationId = applicationId;
 	}
 
-	public async handleInteraction(handler: InteractionHandler, interaction: APIInteraction): Promise<void> {
-		const generator = handler(interaction);
+	public async handleInteraction(generator: InteractionHandler, interaction: APIInteraction): Promise<void> {
 		const actions = new Actions(this.#api, this.#applicationId, interaction);
 
 		let nextValue: FollowUpMessageContainer | undefined;

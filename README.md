@@ -24,8 +24,7 @@ const gateway = new WebSocketManager({
 const client = new Client({ rest, gateway });
 const executor = new Executor(client.api, process.env.APPLICATION_ID);
 
-// For the sake of not having to explicitly type params and to ensure
-// that the handler `yield`s correct types, without the awkawardness of errors when calling `executor.handleInteraction()`
+// For the sake of ensuring that the handler `yield`s correct types, without the awkawardness of errors when calling `executor.handleInteraction()`, we explicitly type the handler as follows
 const pingHandler: InteractionHandler = async function* pingHandler(interaction) {
 	yield {
 		action: ActionKind.Respond,
@@ -41,7 +40,7 @@ client.on(GatewayDispatchEvents.InteractionCreate, async ({ data: interaction, a
 		return;
 	}
 
-	await executor.handleInteraction(pingHandler, interaction);
+	await executor.handleInteraction(pingHandler(interaction), interaction);
 });
 
 client.once(GatewayDispatchEvents.Ready, () => console.log('Ready!'));
@@ -71,7 +70,7 @@ Here's some more cool stuff you can accomplish on top of this:
 const executor = new Executor(client.api, process.env.APPLICATION_ID);
 executor
 	.on(ExecutorEvents.CallbackError, (error) => {
-		console.error('An unhandledx error occurred while executing a non-report:', error);
+		console.error('An unhandled error occurred while executing a non-report:', error);
 	})
 	.on(ExecutorEvents.InteractionError, (error) => {
 		console.error('An unhandled occurred while executing an interaction:', error);
