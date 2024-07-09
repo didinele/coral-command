@@ -135,3 +135,9 @@ For other errors, including poor data formatting within `yield`s, `HandlerError`
 That being said, if no listeners are present, the framework will log the error, then make 2 attempts at reporting it:
 first, it will a regular "Respond" op, then it will attempt a "FollowUp" op. If both fail, an additional log will appear
 letting you know.
+
+# On using with discord.js
+
+You can absolutely do this. Note that stuff like `Interaction#replied` will obviously not be updated, because the framework
+makes raw calls. You just need a couple of `toJSON()` calls to get raw interaction data & to read the client's REST instance,
+(manually constructing a `API` instance from core), and you're good to go.
