@@ -173,7 +173,6 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			throw error;
 		}
 
-		// TODO: Vlad is investigating the lack of type safety of AEE at the moment.
 		this.emit(ExecutorEvents.CallbackError, error);
 	}
 }
