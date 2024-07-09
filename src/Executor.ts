@@ -63,7 +63,7 @@ export type HandlerStep =
 	| RespondStep
 	| UpdateFollowUpStep;
 
-export type InteractionHandler = AsyncGenerator<HandlerStep, HandlerStep, FollowUpMessageContainer>;
+export type InteractionHandler = AsyncGenerator<HandlerStep, HandlerStep | null | undefined, FollowUpMessageContainer>;
 
 export enum ExecutorEvents {
 	CallbackError = 'callbackError',
@@ -95,8 +95,11 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		while (true) {
 			try {
 				const { value: op, done } = nextValue ? await generator.next(nextValue) : await generator.next();
-				// This should only throw if the user used a wrong op, which we want to report as usual
-				nextValue = await this.handleOp(actions, op, interaction);
+
+				if (op) {
+					// This should only throw if the user used a wrong op, which we want to report as usual
+					nextValue = await this.handleOp(actions, op, interaction);
+				}
 
 				if (done) {
 					break;
