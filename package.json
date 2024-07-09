@@ -1,6 +1,6 @@
 {
 	"name": "coral-command",
-	"description": "soonTM",
+	"description": "Tiny generator-driven command framework for @discordjs/core and discord.js",
 	"packageManager": "yarn@4.0.1",
 	"type": "module",
 	"version": "0.1.0",
