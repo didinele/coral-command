@@ -62,8 +62,12 @@ export class Actions {
 	}
 
 	public async ensureDefer(data: DeferData): Promise<void> {
-		if (this.deleted || this.replied) {
-			throw new Error('Cannot defer a deleted or interaction we already replied to');
+		if (this.deleted) {
+			throw new Error('Cannot defer a deleted interaction.');
+		}
+
+		if (this.replied) {
+			return;
 		}
 
 		await this.api.interactions.defer(this.interaction.id, this.interaction.token, data);

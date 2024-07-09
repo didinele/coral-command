@@ -69,10 +69,12 @@ export type InteractionHandler = (
 
 export enum ExecutorEvents {
 	CallbackError = 'callbackError',
+	HandlerError = 'handlerError',
 }
 
 export interface ExecutorEventsMap {
 	[ExecutorEvents.CallbackError]: [error: Error];
+	[ExecutorEvents.HandlerError]: [error: Error];
 }
 
 export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
@@ -102,8 +104,8 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				if (done) {
 					break;
 				}
-			} catch {
-				// TODO
+			} catch (error) {
+				await this.emitHandlerError(this.toError(error), actions);
 			}
 		}
 	}
@@ -150,15 +152,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				try {
 					await op.callback();
 				} catch (error) {
-					if (error instanceof Error) {
-						this.emitCallbackError(error);
-					} else {
-						const actualError =
-							typeof error === 'object' && error !== null && 'toString' in error
-								? // eslint-disable-next-line @typescript-eslint/no-base-to-string
-								  new Error(error.toString())
-								: new Error('An unknown error occurred (that could not be strinfified).');
-					}
+					this.emitCallbackError(this.toError(error));
 				}
 
 				break;
@@ -168,11 +162,59 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		return nextValue;
 	}
 
+	private toError(value: unknown) {
+		if (value instanceof Error) {
+			return value;
+		}
+
+		if (typeof value === 'string') {
+			return new Error(value);
+		}
+
+		return typeof value === 'object' && value !== null && 'toString' in value
+			? // eslint-disable-next-line @typescript-eslint/no-base-to-string
+			  new Error(value.toString())
+			: new Error('An unknown error occurred (that could not be stringified).');
+	}
+
 	private emitCallbackError(error: Error) {
 		if (this.listenerCount(ExecutorEvents.CallbackError) === 0) {
 			throw error;
 		}
 
 		this.emit(ExecutorEvents.CallbackError, error);
+	}
+
+	private async emitHandlerError(error: Error, actions: Actions) {
+		this.emit(ExecutorEvents.HandlerError, error);
+
+		if (this.listenerCount(ExecutorEvents.HandlerError) !== 0) {
+			console.error(`Executor: An error occurred while processing the command: ${error.message}`, error);
+
+			const data = {
+				content: 'An error occurred while processing the command.',
+			};
+
+			const attempts: HandlerStep[] = [
+				{
+					action: ActionKind.Respond,
+					data,
+				},
+				{
+					action: ActionKind.FollowUp,
+					data,
+				},
+			];
+
+			for (const attempt of attempts) {
+				try {
+					// Keep trying until something works
+					await this.handleOp(actions, attempt);
+					break;
+				} catch {}
+			}
+
+			console.log('Executor: The error was NOT reported to the user.');
+		}
 	}
 }

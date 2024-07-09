@@ -37,6 +37,7 @@
 	"homepage": "https://github.com/didinele/coral-command",
 	"scripts": {
 		"build": "tsup && tsc",
+		"prepack": "yarn build",
 		"lint": "eslint src --ext .ts && prettier --check .",
 		"test": "vitest",
 		"format": "prettier --write .",
@@ -63,6 +64,6 @@
 	},
 	"dependencies": {
 		"@discordjs/core": "^1.2.0",
-		"@vladfrangu/async_event_emitter": "^2.4.2"
+		"@vladfrangu/async_event_emitter": "^2.4.3"
 	}
 }
