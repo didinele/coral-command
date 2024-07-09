@@ -150,7 +150,15 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				try {
 					await op.callback();
 				} catch (error) {
-					this.emitCallbackError(error);
+					if (error instanceof Error) {
+						this.emitCallbackError(error);
+					} else {
+						const actualError =
+							typeof error === 'object' && error !== null && 'toString' in error
+								? // eslint-disable-next-line @typescript-eslint/no-base-to-string
+								  new Error(error.toString())
+								: new Error('An unknown error occurred (that could not be strinfified).');
+					}
 				}
 
 				break;
@@ -160,11 +168,12 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		return nextValue;
 	}
 
-	private emitCallbackError(error: any) {
+	private emitCallbackError(error: Error) {
 		if (this.listenerCount(ExecutorEvents.CallbackError) === 0) {
 			throw error;
 		}
 
-		this.emit(ExecutorEvents.CallbackError, 123);
+		// TODO: Vlad is investigating the lack of type safety of AEE at the moment.
+		this.emit(ExecutorEvents.CallbackError, error);
 	}
 }
