@@ -63,7 +63,12 @@ export type HandlerStep =
 	| RespondStep
 	| UpdateFollowUpStep;
 
-export type InteractionHandler = AsyncGenerator<HandlerStep, HandlerStep | null | undefined, FollowUpMessageContainer>;
+export type InteractionHandler = AsyncGenerator<
+	HandlerStep,
+	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+	HandlerStep | null | undefined | void,
+	FollowUpMessageContainer
+>;
 
 export enum ExecutorEvents {
 	CallbackError = 'callbackError',
