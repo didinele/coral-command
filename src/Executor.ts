@@ -155,7 +155,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 
 		return typeof value === 'object' && value !== null && 'toString' in value
 			? // eslint-disable-next-line @typescript-eslint/no-base-to-string
-			  new Error(value.toString())
+				new Error(value.toString())
 			: new Error('An unknown error occurred (that could not be stringified).');
 	}
 
