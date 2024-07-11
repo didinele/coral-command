@@ -18,13 +18,13 @@ export enum ActionKind {
 	ExecuteWithoutErrorReport,
 }
 
-export type DeferData = APIInteractionResponseDeferredChannelMessageWithSource['data'];
+export type DeferOptions = APIInteractionResponseDeferredChannelMessageWithSource['data'];
 
-export type RespondData = APIInteractionResponseCallbackData & {
+export type RespondOptions = APIInteractionResponseCallbackData & {
 	files?: RawFile[];
 };
 
-export type FollowUpData = APIInteractionResponseCallbackData & {
+export type FollowUpOptions = APIInteractionResponseCallbackData & {
 	files?: RawFile[];
 };
 
@@ -47,21 +47,21 @@ export class Actions {
 		this.interaction = interaction;
 	}
 
-	public async respond(data: RespondData): Promise<void> {
+	public async respond(options: RespondOptions): Promise<void> {
 		if (this.deleted) {
 			throw new Error('Cannot respond to a deleted interaction');
 		}
 
 		if (this.replied) {
-			await this.api.interactions.editReply(this.applicationId, this.interaction.token, data);
+			await this.api.interactions.editReply(this.applicationId, this.interaction.token, options);
 		} else {
-			await this.api.interactions.reply(this.interaction.id, this.interaction.token, data);
+			await this.api.interactions.reply(this.interaction.id, this.interaction.token, options);
 		}
 
 		this.replied = true;
 	}
 
-	public async ensureDefer(data: DeferData): Promise<void> {
+	public async ensureDefer(options: DeferOptions): Promise<void> {
 		if (this.deleted) {
 			throw new Error('Cannot defer a deleted interaction.');
 		}
@@ -70,16 +70,16 @@ export class Actions {
 			return;
 		}
 
-		await this.api.interactions.defer(this.interaction.id, this.interaction.token, data);
+		await this.api.interactions.defer(this.interaction.id, this.interaction.token, options);
 		this.replied = true;
 	}
 
-	public async followUp(data: FollowUpData): Promise<FollowUpActions> {
+	public async followUp(options: FollowUpOptions): Promise<FollowUpActions> {
 		if (this.deleted || !this.replied) {
 			throw new Error('Cannot follow up a deleted interaction or interaction we did not reply to');
 		}
 
-		const message = await this.api.interactions.followUp(this.applicationId, this.interaction.token, data);
+		const message = await this.api.interactions.followUp(this.applicationId, this.interaction.token, options);
 		const actions = new FollowUpActions(this, message);
 
 		this.followUpActionsMap.set(message.id, actions);

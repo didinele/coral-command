@@ -1,7 +1,7 @@
-import { TeamMemberMembershipState, type API, type APIInteraction, type Snowflake } from '@discordjs/core';
+import type { API, APIInteraction, Snowflake } from '@discordjs/core';
 import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter';
-import { ActionKind, Actions, type FollowUpData, type RespondData } from './actions/Actions.js';
-import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
+import { HandlerStep } from './Step.js';
+import { ActionKind, Actions } from './actions/Actions.js';
 
 class FollowUpMessageContainer {
 	readonly #id: Snowflake | null;
@@ -18,50 +18,6 @@ class FollowUpMessageContainer {
 		return this.#id;
 	}
 }
-
-export interface RespondStep {
-	action: ActionKind.Respond;
-	data: RespondData;
-}
-
-export interface EnsureDeferStep {
-	action: ActionKind.EnsureDefer;
-	data: RespondData;
-}
-
-export interface DeleteStep {
-	action: ActionKind.Delete;
-}
-
-export interface FollowUpStep {
-	action: ActionKind.FollowUp;
-	data: FollowUpData;
-}
-
-export interface UpdateFollowUpStep {
-	action: ActionKind.UpdateFollowUp;
-	data: UpdateFollowUpData;
-	messageId: Snowflake;
-}
-
-export interface DeleteFollowUpStep {
-	action: ActionKind.DeleteFollowUp;
-	messageId: Snowflake;
-}
-
-export interface ExecuteWithoutErrorReportStep {
-	action: ActionKind.ExecuteWithoutErrorReport;
-	callback(): Promise<void>;
-}
-
-export type HandlerStep =
-	| DeleteFollowUpStep
-	| DeleteStep
-	| EnsureDeferStep
-	| ExecuteWithoutErrorReportStep
-	| FollowUpStep
-	| RespondStep
-	| UpdateFollowUpStep;
 
 export type InteractionHandler = AsyncGenerator<
 	HandlerStep,
@@ -95,15 +51,32 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 	public async handleInteraction(generator: InteractionHandler, interaction: APIInteraction): Promise<void> {
 		const actions = new Actions(this.#api, this.#applicationId, interaction);
 
-		let nextValue: FollowUpMessageContainer | undefined;
+		let nextValue = new FollowUpMessageContainer(null);
 
 		while (true) {
 			try {
-				const { value: op, done } = nextValue ? await generator.next(nextValue) : await generator.next();
+				// `next` throws if the user's code within the generator threw. Errors are natural
+				const { value: op, done } = await generator.next(nextValue);
 
 				if (op) {
-					// This should only throw if the user used a wrong op, which we want to report as usual
-					nextValue = await this.handleOp(actions, op, interaction);
+					// Type-wise this shouldn't happen, but let's be safe
+					if (!(op instanceof HandlerStep)) {
+						continue;
+					}
+
+					try {
+						// This throwing means the user sent malformed data (assuming no internal bug). Without this extra logic
+						// (esp. the Step class having a .cause error), the trace would not include the actual cause
+						// of the error.
+						nextValue = await this.handleOp(actions, op, interaction);
+					} catch (error) {
+						if (error instanceof Error) {
+							error.cause = op.cause;
+							await this.emitHandlerError(error, interaction, actions);
+						} else {
+							await this.emitHandlerError(this.toError(error), interaction, actions);
+						}
+					}
 				}
 
 				if (done) {
@@ -122,14 +95,14 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 	): Promise<FollowUpMessageContainer> {
 		let nextValue = new FollowUpMessageContainer(null);
 
-		switch (op.action) {
+		switch (op.data.action) {
 			case ActionKind.Respond: {
-				await actions.respond(op.data);
+				await actions.respond(op.data.options);
 				break;
 			}
 
 			case ActionKind.EnsureDefer: {
-				await actions.ensureDefer(op.data);
+				await actions.ensureDefer(op.data.options);
 				break;
 			}
 
@@ -139,19 +112,19 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			}
 
 			case ActionKind.FollowUp: {
-				const followUp = await actions.followUp(op.data);
+				const followUp = await actions.followUp(op.data.options);
 				nextValue = new FollowUpMessageContainer(followUp.messageId);
 				break;
 			}
 
 			case ActionKind.UpdateFollowUp: {
-				const followUp = actions.getExistingFollowUp(op.messageId);
-				await followUp.update(op.data);
+				const followUp = actions.getExistingFollowUp(op.data.messageId);
+				await followUp.update(op.data.options);
 				break;
 			}
 
 			case ActionKind.DeleteFollowUp: {
-				const followUp = actions.getExistingFollowUp(op.messageId);
+				const followUp = actions.getExistingFollowUp(op.data.messageId);
 				await followUp.delete();
 				break;
 			}
@@ -159,7 +132,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 			case ActionKind.ExecuteWithoutErrorReport: {
 				// Make sure we don't throw here
 				try {
-					await op.callback();
+					await op.data.callback();
 				} catch (error) {
 					this.emitCallbackError(this.toError(error), interaction);
 				}
