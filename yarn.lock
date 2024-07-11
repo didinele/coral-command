@@ -994,15 +994,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/is-ci@npm:^3.0.4":
-  version: 3.0.4
-  resolution: "@types/is-ci@npm:3.0.4"
-  dependencies:
-    ci-info: "npm:^3.1.0"
-  checksum: 80a3d444d06af53b32429ef9e70184adf12bd98a2f851d8c050aecf7b4abfdab9671abc317785be834d41cad98331992040147ef382bacc2b2a441fee1549a3e
-  languageName: node
-  linkType: hard
-
 "@types/is-empty@npm:^1.0.0":
   version: 1.2.3
   resolution: "@types/is-empty@npm:1.2.3"
@@ -2031,7 +2022,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ci-info@npm:^3.1.0, ci-info@npm:^3.2.0, ci-info@npm:^3.8.0":
+"ci-info@npm:^3.2.0, ci-info@npm:^3.8.0":
   version: 3.9.0
   resolution: "ci-info@npm:3.9.0"
   checksum: 6f0109e36e111684291d46123d491bc4e7b7a1934c3a20dea28cba89f1d4a03acd892f5f6a81ed3855c38647e285a150e3c9ba062e38943bef57fee6c1554c3a
@@ -2211,7 +2202,6 @@ __metadata:
     "@commitlint/config-angular": "npm:^18.6.1"
     "@discordjs/core": "npm:^1.2.0"
     "@discordjs/rest": "npm:^2.3.0"
-    "@types/is-ci": "npm:^3.0.4"
     "@vladfrangu/async_event_emitter": "npm:^2.4.3"
     eslint: "npm:^8.53.0"
     eslint-config-neon: "npm:^0.1.57"

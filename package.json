@@ -1,7 +1,7 @@
 {
 	"name": "coral-command",
 	"description": "Tiny generator-driven command framework for @discordjs/core and discord.js",
-	"packageManager": "yarn@4.0.1",
+	"packageManager": "yarn@4.0.2",
 	"type": "module",
 	"version": "0.4.2",
 	"author": {
@@ -18,8 +18,8 @@
 			"default": "./dist/index.mjs"
 		}
 	},
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"directories": {
 		"lib": "src"
