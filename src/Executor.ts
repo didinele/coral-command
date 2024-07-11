@@ -72,9 +72,9 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 					} catch (error) {
 						if (error instanceof Error) {
 							error.cause = op.cause;
-							await this.emitHandlerError(error, interaction, actions);
+							await this.emitHandlerError(error, actions);
 						} else {
-							await this.emitHandlerError(this.toError(error), interaction, actions);
+							await this.emitHandlerError(this.toError(error), actions);
 						}
 					}
 				}
@@ -83,7 +83,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 					break;
 				}
 			} catch (error) {
-				await this.emitHandlerError(this.toError(error), interaction, actions);
+				await this.emitHandlerError(this.toError(error), actions);
 			}
 		}
 	}
@@ -167,10 +167,10 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		this.emit(ExecutorEvents.CallbackError, error, interaction);
 	}
 
-	private async emitHandlerError(error: Error, interaction: APIInteraction, actions: Actions) {
+	private async emitHandlerError(error: Error, actions: Actions) {
 		this.emit(ExecutorEvents.HandlerError, error, actions);
 
-		if (this.listenerCount(ExecutorEvents.HandlerError) !== 0) {
+		if (this.listenerCount(ExecutorEvents.HandlerError) === 0) {
 			console.error(`Executor: An error occurred while processing the command: ${error.message}`, error);
 
 			const data = {
