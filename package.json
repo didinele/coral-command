@@ -3,7 +3,7 @@
 	"description": "Tiny generator-driven command framework for @discordjs/core and discord.js",
 	"packageManager": "yarn@4.0.2",
 	"type": "module",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"author": {
 		"name": "Denis Cristea",
 		"email": "didinele.dev@gmail.com"
