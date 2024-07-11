@@ -28,7 +28,7 @@ const executor = new Executor(client.api, process.env.APPLICATION_ID);
 const pingHandler: InteractionHandler = async function* pingHandler(interaction) {
 	yield HandlerStep.from({
 		action: ActionKind.Respond,
-		data: {
+		options: {
 			content: 'Pong!',
 			flags: MessageFlags.Ephemeral,
 		},
@@ -81,16 +81,16 @@ executor
 const someHelper: InteractionHandler = async function* pingHandler(interaction): Promise<Snowflake> {
 	yield HandlerStep.from({
 		action: ActionKind.Respond,
-		data: {
+		options: {
 			content:
 				'So, any call to this handler will make the interaction response into... this! Regardless of it was already sent or not.',
 			flags: MessageFlags.Ephemeral,
 		},
-	};
+	});
 
 	const container = yield HandlerStep.from({
 		action: ActionKind.FollowUp,
-		data: {
+		options: {
 			content: 'This is a follow up message!',
 		},
 	});
@@ -102,7 +102,7 @@ const someHelper: InteractionHandler = async function* pingHandler(interaction):
 
 	yield HandlerStep.from({
 		action: ActionKind.UpdateFollowUp,
-		data: {
+		options: {
 			content: 'yippie',
 		},
 		messageId,
@@ -120,7 +120,7 @@ const actualCommandHandler: InteractionHandler = async function* actualCommandHa
 	// report the error, so we can do the following:
 	yield HandlerStep.from({
 		action: ActionKind.ExecuteWithoutErrorReport,
-		data: async () => {
+		callback: async () => {
 			// Do some logging
 		},
 	});
