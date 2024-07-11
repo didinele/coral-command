@@ -95,7 +95,7 @@ export class Actions {
 		}
 
 		if (this.replied) {
-			await this.api.channels.editMessage(this.interaction.channel.id, this.interaction.message.id, options);
+			await this.api.interactions.editReply(this.applicationId, this.interaction.token, options);
 		} else {
 			await this.api.interactions.updateMessage(this.interaction.id, this.interaction.token, options);
 		}
@@ -118,6 +118,7 @@ export class Actions {
 
 		await this.api.interactions.deferMessageUpdate(this.interaction.id, this.interaction.token);
 
+		this.replied = true;
 		this.deferred = true;
 	}
 
