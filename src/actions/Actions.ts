@@ -53,9 +53,9 @@ export class Actions {
 		}
 
 		if (this.replied) {
-			await this.api.interactions.reply(this.interaction.id, this.interaction.token, data);
-		} else {
 			await this.api.interactions.editReply(this.applicationId, this.interaction.token, data);
+		} else {
+			await this.api.interactions.reply(this.interaction.id, this.interaction.token, data);
 		}
 
 		this.replied = true;
