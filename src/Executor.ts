@@ -96,13 +96,23 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		let nextValue = new FollowUpMessageContainer(null);
 
 		switch (op.data.action) {
-			case ActionKind.Respond: {
-				await actions.respond(op.data.options);
+			case ActionKind.Reply: {
+				await actions.reply(op.data.options);
 				break;
 			}
 
-			case ActionKind.EnsureDefer: {
-				await actions.ensureDefer(op.data.options);
+			case ActionKind.EnsureDeferReply: {
+				await actions.deferReply(op.data.options);
+				break;
+			}
+
+			case ActionKind.UpdateMessage: {
+				await actions.updateMessage(op.data.options);
+				break;
+			}
+
+			case ActionKind.EnsureDeferUpdateMessage: {
+				await actions.ensureDeferUpdateMessage();
 				break;
 			}
 
@@ -167,7 +177,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		this.emit(ExecutorEvents.CallbackError, error, interaction);
 	}
 
-	private async emitHandlerError(error: Error, actions: Actions) {
+	private async emitHandlerError(error: Error, actions: Actions): Promise<void> {
 		this.emit(ExecutorEvents.HandlerError, error, actions);
 
 		if (this.listenerCount(ExecutorEvents.HandlerError) === 0) {
@@ -179,7 +189,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 
 			// Try both and hopefully something works
 			try {
-				await actions.respond(data);
+				await actions.reply(data);
 				return;
 			} catch {
 				try {

@@ -1,15 +1,24 @@
 import type { Snowflake } from '@discordjs/core';
-import type { ActionKind, FollowUpOptions, RespondOptions } from './actions/Actions.js';
+import type { ActionKind, FollowUpOptions, ReplyOptions, UpdateMessageOptions } from './actions/Actions.js';
 import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
 
-export interface RespondStepData {
-	action: ActionKind.Respond;
-	options: RespondOptions;
+export interface ReplyStepData {
+	action: ActionKind.Reply;
+	options: ReplyOptions;
 }
 
 export interface EnsureDeferStepData {
-	action: ActionKind.EnsureDefer;
-	options: RespondOptions;
+	action: ActionKind.EnsureDeferReply;
+	options: ReplyOptions;
+}
+
+export interface UpdateMessageStepData {
+	action: ActionKind.UpdateMessage;
+	options: UpdateMessageOptions;
+}
+
+export interface EnsureDeferUpdateMessageStepData {
+	action: ActionKind.EnsureDeferUpdateMessage;
 }
 
 export interface DeleteStepData {
@@ -41,10 +50,12 @@ export type HandlerStepData =
 	| DeleteFollowUpStepData
 	| DeleteStepData
 	| EnsureDeferStepData
+	| EnsureDeferUpdateMessageStepData
 	| ExecuteWithoutErrorReportStepData
 	| FollowUpStepData
-	| RespondStepData
-	| UpdateFollowUpStepData;
+	| ReplyStepData
+	| UpdateFollowUpStepData
+	| UpdateMessageStepData;
 
 export class HandlerStep {
 	public readonly data: HandlerStepData;

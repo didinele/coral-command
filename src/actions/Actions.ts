@@ -1,16 +1,19 @@
-import type {
-	API,
-	APIInteraction,
-	APIInteractionResponseCallbackData,
-	APIInteractionResponseDeferredChannelMessageWithSource,
-	Snowflake,
+import {
+	InteractionType,
+	type API,
+	type APIInteraction,
+	type APIInteractionResponseCallbackData,
+	type APIInteractionResponseDeferredChannelMessageWithSource,
+	type Snowflake,
 } from '@discordjs/core';
 import type { RawFile } from '@discordjs/rest';
 import { FollowUpActions } from './FollowUpActions.js';
 
 export enum ActionKind {
-	Respond,
-	EnsureDefer,
+	Reply,
+	EnsureDeferReply,
+	UpdateMessage,
+	EnsureDeferUpdateMessage,
 	Delete,
 	FollowUp,
 	UpdateFollowUp,
@@ -18,9 +21,13 @@ export enum ActionKind {
 	ExecuteWithoutErrorReport,
 }
 
-export type DeferOptions = APIInteractionResponseDeferredChannelMessageWithSource['data'];
+export type ReplyOptions = APIInteractionResponseCallbackData & {
+	files?: RawFile[];
+};
 
-export type RespondOptions = APIInteractionResponseCallbackData & {
+export type DeferReplyOptions = APIInteractionResponseDeferredChannelMessageWithSource['data'];
+
+export type UpdateMessageOptions = APIInteractionResponseCallbackData & {
 	files?: RawFile[];
 };
 
@@ -47,7 +54,7 @@ export class Actions {
 		this.interaction = interaction;
 	}
 
-	public async respond(options: RespondOptions): Promise<void> {
+	public async reply(options: ReplyOptions): Promise<void> {
 		if (this.deleted) {
 			throw new Error('Cannot respond to a deleted interaction');
 		}
@@ -61,7 +68,7 @@ export class Actions {
 		this.replied = true;
 	}
 
-	public async ensureDefer(options: DeferOptions): Promise<void> {
+	public async deferReply(options: DeferReplyOptions): Promise<void> {
 		if (this.deleted) {
 			throw new Error('Cannot defer a deleted interaction.');
 		}
@@ -72,6 +79,38 @@ export class Actions {
 
 		await this.api.interactions.defer(this.interaction.id, this.interaction.token, options);
 		this.replied = true;
+	}
+
+	public async updateMessage(options: UpdateMessageOptions): Promise<void> {
+		if (this.interaction.type !== InteractionType.MessageComponent) {
+			throw new Error('Cannot update a message for an interaction that is not a message component.');
+		}
+
+		if (this.deleted) {
+			throw new Error('Cannot respond to a deleted interaction.');
+		}
+
+		if (this.replied) {
+			await this.api.channels.editMessage(this.interaction.channel.id, this.interaction.message.id, options);
+		} else {
+			await this.api.interactions.updateMessage(this.applicationId, this.interaction.token, options);
+		}
+	}
+
+	public async ensureDeferUpdateMessage(): Promise<void> {
+		if (this.interaction.type !== InteractionType.MessageComponent) {
+			throw new Error('Cannot defer a message update for an interaction that is not a message component.');
+		}
+
+		if (this.deleted) {
+			throw new Error('Cannot defer a deleted interaction.');
+		}
+
+		if (this.replied) {
+			return;
+		}
+
+		await this.api.interactions.deferMessageUpdate(this.applicationId, this.interaction.token);
 	}
 
 	public async followUp(options: FollowUpOptions): Promise<FollowUpActions> {

@@ -27,7 +27,7 @@ const executor = new Executor(client.api, process.env.APPLICATION_ID);
 // For the sake of ensuring that the handler `yield`s correct types, without the awkawardness of errors when calling `executor.handleInteraction()`, we explicitly type the handler as follows
 const pingHandler: InteractionHandler = async function* pingHandler(interaction) {
 	yield HandlerStep.from({
-		action: ActionKind.Respond,
+		action: ActionKind.Reply,
 		options: {
 			content: 'Pong!',
 			flags: MessageFlags.Ephemeral,
@@ -51,16 +51,7 @@ void gateway.connect();
 # But... why?
 
 Generally speaking, it's difficult to write RE-USEABLE code when responding to interactions. The API this package offers
-aims to sort of make those operations more safe. It's certainly not perfect, but it's a start.
-
-The following actions are available:
-
-- `ActionKind.Respond` - Serves as a "reply or edit" action.
-- `ActionKind.EnsureDefer` - Ensures that the interaction is deferred. If it's already deferred, it does nothing.
-- `ActionKind.Delete` - Deletes the initial interaction response.
-- `ActionKind.FollowUp` - Sends a follow up message, more below.
-- `ActionKind.UpdateFollowUp` / `ActionKind.DeleteFollowUp` - Updates or deletes a follow up message.
-- `ActionKind.ExecuteWithoutErrorReport` - Provided a callback, effectively marks the code inside of it as "this is fine if it fails, it doesn't matter to the user or the flow of the command, just move along".
+aims to sort of make those operations more safe.
 
 # Still not following
 
@@ -80,7 +71,7 @@ executor
 
 const someHelper: InteractionHandler = async function* pingHandler(interaction): Promise<Snowflake> {
 	yield HandlerStep.from({
-		action: ActionKind.Respond,
+		action: ActionKind.Reply,
 		options: {
 			content:
 				'So, any call to this handler will make the interaction response into... this! Regardless of it was already sent or not.',
