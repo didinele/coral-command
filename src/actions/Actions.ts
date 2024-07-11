@@ -44,9 +44,11 @@ export class Actions {
 
 	public readonly followUpActionsMap = new Map<Snowflake, FollowUpActions>();
 
-	protected replied = false;
+	private replied = false;
 
-	protected deleted = false;
+	private deferred = false;
+
+	private deleted = false;
 
 	public constructor(api: API, applicationId: Snowflake, interaction: APIInteraction) {
 		this.api = api;
@@ -73,12 +75,14 @@ export class Actions {
 			throw new Error('Cannot defer a deleted interaction.');
 		}
 
-		if (this.replied) {
+		if (this.replied || this.deferred) {
 			return;
 		}
 
 		await this.api.interactions.defer(this.interaction.id, this.interaction.token, options);
+
 		this.replied = true;
+		this.deferred = true;
 	}
 
 	public async updateMessage(options: UpdateMessageOptions): Promise<void> {
@@ -95,6 +99,8 @@ export class Actions {
 		} else {
 			await this.api.interactions.updateMessage(this.interaction.id, this.interaction.token, options);
 		}
+
+		this.replied = true;
 	}
 
 	public async ensureDeferUpdateMessage(): Promise<void> {
@@ -106,11 +112,13 @@ export class Actions {
 			throw new Error('Cannot defer a deleted interaction.');
 		}
 
-		if (this.replied) {
+		if (this.replied || this.deferred) {
 			return;
 		}
 
 		await this.api.interactions.deferMessageUpdate(this.interaction.id, this.interaction.token);
+
+		this.deferred = true;
 	}
 
 	public async followUp(options: FollowUpOptions): Promise<FollowUpActions> {
