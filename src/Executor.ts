@@ -57,7 +57,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 					}
 				}
 
-				if (done) {
+				if (done || op.data.action === ActionKind.ExitEarly) {
 					break;
 				}
 			} catch (error) {
@@ -121,6 +121,10 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 					this.emitCallbackError(this.toError(error), interaction);
 				}
 
+				break;
+			}
+
+			case ActionKind.ExitEarly: {
 				break;
 			}
 		}

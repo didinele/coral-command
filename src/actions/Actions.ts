@@ -19,6 +19,7 @@ export enum ActionKind {
 	UpdateFollowUp,
 	DeleteFollowUp,
 	ExecuteWithoutErrorReport,
+	ExitEarly,
 }
 
 export type ReplyOptions = APIInteractionResponseCallbackData & {

@@ -46,12 +46,17 @@ export interface ExecuteWithoutErrorReportStepData {
 	callback(): Promise<void>;
 }
 
+export interface ExitEarlyStepData {
+	action: ActionKind.ExitEarly;
+}
+
 export type HandlerStepData =
 	| DeleteFollowUpStepData
 	| DeleteStepData
 	| EnsureDeferStepData
 	| EnsureDeferUpdateMessageStepData
 	| ExecuteWithoutErrorReportStepData
+	| ExitEarlyStepData
 	| FollowUpStepData
 	| ReplyStepData
 	| UpdateFollowUpStepData
