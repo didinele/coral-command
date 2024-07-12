@@ -1,5 +1,5 @@
 import type { Snowflake } from '@discordjs/core';
-import type { ActionKind, FollowUpOptions, ReplyOptions, UpdateMessageOptions } from './actions/Actions.js';
+import { ActionKind, type FollowUpOptions, type ReplyOptions, type UpdateMessageOptions } from './actions/Actions.js';
 import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
 
 export interface ReplyStepData {
@@ -77,12 +77,20 @@ export class HandlerStep {
 		this.cause = cause;
 	}
 
-	public static from(data: FollowUpStepData): InteractionHandler<Snowflake>;
-	public static from(data: Exclude<HandlerStepData, FollowUpStepData>): InteractionHandler<void>;
+	public static from(data: FollowUpStepData, exit: false): InteractionHandler<Snowflake>;
+	public static from(data: Exclude<HandlerStepData, FollowUpStepData>, exit: boolean): InteractionHandler<void>;
+	public static from(data: HandlerStepData, exit: true): InteractionHandler<void>;
 
 	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-	public static *from(data: HandlerStepData): InteractionHandler<Snowflake | void> {
-		const messageId = yield new HandlerStep(data, new Error('An operation caused an error within the Executor.'));
+	public static *from(data: HandlerStepData, exit = false): InteractionHandler<Snowflake | void> {
+		const error = new Error('An operation caused an error within the Executor.');
+
+		const messageId = yield new HandlerStep(data, error);
+		if (exit) {
+			yield new HandlerStep({ action: ActionKind.ExitEarly }, error);
+			return;
+		}
+
 		if (messageId) {
 			return messageId;
 		}
