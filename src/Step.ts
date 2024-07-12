@@ -57,6 +57,11 @@ export type HandlerStepData =
 	| UpdateFollowUpStepData
 	| UpdateMessageStepData;
 
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export type InteractionHandler<TReturn = void> =
+	| AsyncGenerator<HandlerStep, TReturn, Snowflake>
+	| Generator<HandlerStep, TReturn, Snowflake>;
+
 export class HandlerStep {
 	public readonly data: HandlerStepData;
 
@@ -67,7 +72,14 @@ export class HandlerStep {
 		this.cause = cause;
 	}
 
-	public static from(data: HandlerStepData): HandlerStep {
-		return new HandlerStep(data, new Error('A malformed API payload was send to the handler.'));
+	public static from(data: FollowUpStepData): InteractionHandler<Snowflake>;
+	public static from(data: Exclude<HandlerStepData, FollowUpStepData>): InteractionHandler<void>;
+
+	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+	public static *from(data: HandlerStepData): InteractionHandler<Snowflake | void> {
+		const messageId = yield new HandlerStep(data, new Error('An operation caused an error within the Executor.'));
+		if (messageId) {
+			return messageId;
+		}
 	}
 }

@@ -1,30 +1,7 @@
 import type { API, APIInteraction, Snowflake } from '@discordjs/core';
 import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter';
-import { HandlerStep } from './Step.js';
+import { HandlerStep, type InteractionHandler } from './Step.js';
 import { ActionKind, Actions } from './actions/Actions.js';
-
-class FollowUpMessageContainer {
-	readonly #id: Snowflake | null;
-
-	public constructor(id: Snowflake | null) {
-		this.#id = id;
-	}
-
-	public unwrap(): Snowflake {
-		if (this.#id === null) {
-			throw new Error('Tried to unwrap but we were not working with a follow-up action.');
-		}
-
-		return this.#id;
-	}
-}
-
-export type InteractionHandler = AsyncGenerator<
-	HandlerStep,
-	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-	HandlerStep | null | undefined | void,
-	FollowUpMessageContainer
->;
 
 export enum ExecutorEvents {
 	CallbackError = 'callbackError',
@@ -48,15 +25,16 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		this.#applicationId = applicationId;
 	}
 
-	public async handleInteraction(generator: InteractionHandler, interaction: APIInteraction): Promise<void> {
+	public async handleInteraction(generator: InteractionHandler<void>, interaction: APIInteraction): Promise<void> {
 		const actions = new Actions(this.#api, this.#applicationId, interaction);
 
-		let nextValue = new FollowUpMessageContainer(null);
+		let nextValue: Snowflake | null = null;
 
 		while (true) {
 			try {
 				// `next` throws if the user's code within the generator threw. Errors are natural
-				const { value: op, done } = await generator.next(nextValue);
+				const { value: op, done } = nextValue ? await generator.next(nextValue) : await generator.next();
+				nextValue = null;
 
 				if (op) {
 					// Type-wise this shouldn't happen, but let's be safe
@@ -88,12 +66,8 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 		}
 	}
 
-	private async handleOp(
-		actions: Actions,
-		op: HandlerStep,
-		interaction: APIInteraction,
-	): Promise<FollowUpMessageContainer> {
-		let nextValue = new FollowUpMessageContainer(null);
+	private async handleOp(actions: Actions, op: HandlerStep, interaction: APIInteraction): Promise<Snowflake | null> {
+		let nextValue: Snowflake | null = null;
 
 		switch (op.data.action) {
 			case ActionKind.Reply: {
@@ -123,7 +97,7 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 
 			case ActionKind.FollowUp: {
 				const followUp = await actions.followUp(op.data.options);
-				nextValue = new FollowUpMessageContainer(followUp.messageId);
+				nextValue = followUp.messageId;
 				break;
 			}
 

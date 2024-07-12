@@ -24,16 +24,15 @@ const gateway = new WebSocketManager({
 const client = new Client({ rest, gateway });
 const executor = new Executor(client.api, process.env.APPLICATION_ID);
 
-// For the sake of ensuring that the handler `yield`s correct types, without the awkawardness of errors when calling `executor.handleInteraction()`, we explicitly type the handler as follows
-const pingHandler: InteractionHandler = async function* pingHandler(interaction) {
-	yield HandlerStep.from({
+async function* pingHandler(interaction): InteractionHandler {
+	yield* HandlerStep.from({
 		action: ActionKind.Reply,
 		options: {
 			content: 'Pong!',
 			flags: MessageFlags.Ephemeral,
 		},
 	});
-};
+}
 
 client.on(GatewayDispatchEvents.InteractionCreate, async ({ data: interaction, api }) => {
 	if (interaction.type !== InteractionType.ApplicationCommand || interaction.data.name !== 'ping') {
@@ -70,7 +69,7 @@ executor
 	});
 
 const someHelper: InteractionHandler = async function* pingHandler(interaction): Promise<Snowflake> {
-	yield HandlerStep.from({
+	yield* HandlerStep.from({
 		action: ActionKind.Reply,
 		options: {
 			content:
@@ -79,19 +78,14 @@ const someHelper: InteractionHandler = async function* pingHandler(interaction):
 		},
 	});
 
-	const container = yield HandlerStep.from({
+	const messageId = yield* HandlerStep.from({
 		action: ActionKind.FollowUp,
 		options: {
 			content: 'This is a follow up message!',
 		},
 	});
-	// Due to TS limitations, any `yield` expression returns the same type regardless of what you yield.
-	// As such, the framework returns a wrapper type, meant to serve as a sort of type cast (i.e. "yes, this is a follow up")
-	// We do this as opposed to just giving you Snowflake | undefined so that in case you actually change it to be a different action
-	// but forget, you get a cleaner runtime error.
-	const messageId = container.unwrap();
 
-	yield HandlerStep.from({
+	yield* HandlerStep.from({
 		action: ActionKind.UpdateFollowUp,
 		options: {
 			content: 'yippie',
@@ -109,7 +103,7 @@ const actualCommandHandler: InteractionHandler = async function* actualCommandHa
 
 	// At this point, we're done with our work, but we want to do some logging. If our code throws, we don't want to
 	// report the error, so we can do the following:
-	yield HandlerStep.from({
+	yield* HandlerStep.from({
 		action: ActionKind.ExecuteWithoutErrorReport,
 		callback: async () => {
 			// Do some logging

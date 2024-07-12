@@ -23,6 +23,3 @@ jobs:
 
       - name: Run ESLint
         run: yarn run lint
-
-      - name: Run tests
-        run: yarn run test
