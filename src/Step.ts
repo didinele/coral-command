@@ -77,8 +77,8 @@ export class HandlerStep {
 		this.cause = cause;
 	}
 
-	public static from(data: FollowUpStepData, exit: false): InteractionHandler<Snowflake>;
-	public static from(data: Exclude<HandlerStepData, FollowUpStepData>, exit: boolean): InteractionHandler<void>;
+	public static from(data: FollowUpStepData, exit?: false): InteractionHandler<Snowflake>;
+	public static from(data: Exclude<HandlerStepData, FollowUpStepData>, exit?: boolean): InteractionHandler<void>;
 	public static from(data: HandlerStepData, exit: true): InteractionHandler<void>;
 
 	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
