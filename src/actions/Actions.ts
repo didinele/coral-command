@@ -4,6 +4,7 @@ import {
 	type APIInteraction,
 	type APIInteractionResponseCallbackData,
 	type APIInteractionResponseDeferredChannelMessageWithSource,
+	type APIModalInteractionResponseCallbackData,
 	type Snowflake,
 } from '@discordjs/core';
 import type { RawFile } from '@discordjs/rest';
@@ -14,6 +15,7 @@ export enum ActionKind {
 	EnsureDeferReply,
 	UpdateMessage,
 	EnsureDeferUpdateMessage,
+	OpenModal,
 	Delete,
 	FollowUp,
 	UpdateFollowUp,
@@ -31,6 +33,8 @@ export type DeferReplyOptions = APIInteractionResponseDeferredChannelMessageWith
 export type UpdateMessageOptions = APIInteractionResponseCallbackData & {
 	files?: RawFile[];
 };
+
+export type OpenModalData = APIModalInteractionResponseCallbackData;
 
 export type FollowUpOptions = APIInteractionResponseCallbackData & {
 	files?: RawFile[];
@@ -121,6 +125,17 @@ export class Actions {
 
 		this.replied = true;
 		this.deferred = true;
+	}
+
+	public async openModal(options: OpenModalData): Promise<void> {
+		if (this.deleted || this.replied || this.interaction.type === InteractionType.ModalSubmit) {
+			throw new Error(
+				'Can only open modals for interactions that have not been replied to or deleted - of type different from MODAL_SUBMIT',
+			);
+		}
+
+		await this.api.interactions.createModal(this.interaction.id, this.interaction.token, options);
+		this.replied = true;
 	}
 
 	public async followUp(options: FollowUpOptions): Promise<FollowUpActions> {

@@ -95,6 +95,11 @@ export class Executor extends AsyncEventEmitter<ExecutorEventsMap> {
 				break;
 			}
 
+			case ActionKind.OpenModal: {
+				await actions.openModal(op.data.options);
+				break;
+			}
+
 			case ActionKind.FollowUp: {
 				const followUp = await actions.followUp(op.data.options);
 				nextValue = followUp.messageId;

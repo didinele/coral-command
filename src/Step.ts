@@ -1,5 +1,11 @@
 import type { Snowflake } from '@discordjs/core';
-import { ActionKind, type FollowUpOptions, type ReplyOptions, type UpdateMessageOptions } from './actions/Actions.js';
+import {
+	ActionKind,
+	type FollowUpOptions,
+	type OpenModalData,
+	type ReplyOptions,
+	type UpdateMessageOptions,
+} from './actions/Actions.js';
 import type { UpdateFollowUpData } from './actions/FollowUpActions.js';
 
 export interface ReplyStepData {
@@ -41,6 +47,11 @@ export interface DeleteFollowUpStepData {
 	messageId: Snowflake;
 }
 
+export interface OpenModalStepData {
+	action: ActionKind.OpenModal;
+	options: OpenModalData;
+}
+
 export interface ExecuteWithoutErrorReportStepData {
 	action: ActionKind.ExecuteWithoutErrorReport;
 	callback(): Promise<void>;
@@ -58,6 +69,7 @@ export type HandlerStepData =
 	| ExecuteWithoutErrorReportStepData
 	| ExitEarlyStepData
 	| FollowUpStepData
+	| OpenModalStepData
 	| ReplyStepData
 	| UpdateFollowUpStepData
 	| UpdateMessageStepData;
